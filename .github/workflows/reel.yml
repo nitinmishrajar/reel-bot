@@ -1,0 +1,36 @@
+name: Reel check
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: pip install instaloader requests
+
+      - name: Check for new reels
+        run: python reel_check.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          INSTAGRAM_USERNAME: ${{ secrets.INSTAGRAM_USERNAME }}
+
+      - name: Save what we have seen
+        run: |
+          git config user.name "reel-bot"
+          git config user.email "reel-bot@users.noreply.github.com"
+          git add seen.json
+          git diff --staged --quiet || (git commit -m "update seen reels" && git push)
